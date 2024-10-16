@@ -3,7 +3,8 @@ name: CI
 on:
   push:
     branches: [ master ]
-
+  pull_request:
+    types: [opened, synchronize, reopened]  # To analyze PRs
   workflow_dispatch:
 
 jobs:
@@ -32,16 +33,12 @@ jobs:
         run: |
           set -x
 
-          # source code paths are included in the final binary, so we need to make them stable across builds
           SOURCE_DIR=/Users/Shared/telegram-ios
-
-          # use canonical bazel root
           BAZEL_USER_ROOT="/private/var/tmp/_bazel_containerhost"
 
           cd $SOURCE_DIR
 
           BUILD_NUMBER_OFFSET="$(cat build_number_offset)"
-
           export APP_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["app"]);')
           export COMMIT_COUNT=$(git rev-list --count HEAD)
           export COMMIT_COUNT="$(($COMMIT_COUNT+$BUILD_NUMBER_OFFSET))"
@@ -58,7 +55,6 @@ jobs:
             --configuration=release_arm64 \
             --buildNumber="$BUILD_NUMBER"
 
-          # collect ipa
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
@@ -66,7 +62,6 @@ jobs:
             cp "$f" $OUTPUT_PATH/
           done
 
-          # collect dsym
           mkdir -p build/DSYMs
           for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/*.dSYM; do
             cp -R "$f" build/DSYMs/
@@ -87,7 +82,7 @@ jobs:
           prerelease: false
 
       - name: Upload Release IPA
-        id: upload-release-ipa 
+        id: upload-release-ipa
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -98,7 +93,7 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload Release DSYM
-        id: upload-release-dsym 
+        id: upload-release-dsym
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -107,3 +102,16 @@ jobs:
           asset_path: /Users/Shared/telegram-ios/build/artifacts/Telegram.DSYMs.zip
           asset_name: Telegram.DSYMs.zip
           asset_content_type: application/zip
+
+      # Add SonarCloud static analysis steps here
+      - name: SonarCloud Scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub token for PR decoration
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # SonarCloud token from GitHub Secrets
+        run: |
+          sonar-scanner \
+            -Dsonar.projectKey=macantomato_Telegram-iOS \
+            -Dsonar.organization=telegram-ios \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
