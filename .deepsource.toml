@@ -1,6 +1,12 @@
 version = 1
 
 [[analyzers]]
+name = "csharp"
+
+[[analyzers]]
+name = "test-coverage"
+
+[[analyzers]]
 name = "shell"
 
 [[analyzers]]
@@ -14,3 +20,6 @@ name = "clang-format"
 
 [[transformers]]
 name = "swift-format"
+
+[[transformers]]
+name = "dotnet-format"
