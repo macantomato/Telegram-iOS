@@ -107,11 +107,11 @@ jobs:
       - name: SonarCloud Scan
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub token for PR decoration
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # SonarCloud token from GitHub Secrets
+          SONAR_TOKEN: b46a3e3597261a4f887b11454986ec61409dfba7  # Your SonarCloud token directly
         run: |
           sonar-scanner \
             -Dsonar.projectKey=macantomato_Telegram-iOS \
             -Dsonar.organization=telegram-ios \
             -Dsonar.sources=. \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.login=b46a3e3597261a4f887b11454986ec61409dfba7
